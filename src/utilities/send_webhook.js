@@ -1,11 +1,10 @@
 import axios from 'axios';
 import FormData from 'form-data';
 import { resolve } from 'path';
-import delay from '../helper/delay.js';
+import delay from '../utilities/delay.js';
 import dotenv from 'dotenv';
 
 dotenv.config({ path: resolve('../../.env') });
-
 
 /**
  * @description  - This function sends messages to TinTang community.
@@ -13,29 +12,47 @@ dotenv.config({ path: resolve('../../.env') });
  * @param {*} imageURL : The image of story.
  * @param {*} postUrl  : The URL of the story.
  */
-export default async function sendWebhook(headline, imageURL, postUrl) {
+export default async function sendWebhook(productTitle, productSKU, releaseMethod, sizeWithStockNumber, productPhoto) {
   // The Discord webhook
   const webhookUrl = process.env.DISCORD_WEBHOOK;
+
+
   try {
     // Create embed structure object message to send to Discord
+
+    const sizeString = Object.entries(sizeWithStockNumber)
+      .map(([size, level]) => `${size}: ${level}`)
+      .join('\n');
+    const formattedSizeString = `\`\`\`\n${sizeString}\n\`\`\``; // Wrap the size string in a code block
+
     const embed = {
-      title: headline,
+      title: `${productTitle}`,
       color: 5763719,
       author: {
         name: '7tinh Hub News',
         icon_url: 'https://media.discordapp.net/attachments/1303904551417413642/1343342344086224906/image.png?ex=67bcec8c&is=67bb9b0c&hm=eb9327c9c3e61e714d710a34c2f64dc5506452adb696ffe6420503200d634ef2&=&format=webp&quality=lossless&width=653&height=278',
         url: 'https://www.youtube.com/@ttintang',
+      },      
+      image: {
+        url: productPhoto,
       },
       fields: [
         {
-          name: "",
-          value: `[Learn more](${postUrl})`,
-          inline: true,
+          name: "SKU",
+          value: `${productSKU}`,
+          inline: false,
         },
+        {
+          name: "Release Method",
+          value: `${releaseMethod}`,
+          inline: false,
+        },
+        {
+          name: "Stock Loaded",
+          value: formattedSizeString || "No stock information available",
+        }
       ],
-      image: {
-        url: imageURL,
-      },
+
       footer: {
         text: 'powered by Casual Solutions',
         icon_url: 'https://pbs.twimg.com/profile_images/1398475007584444418/GRPcs63v_400x400.jpg',
@@ -67,6 +84,9 @@ export default async function sendWebhook(headline, imageURL, postUrl) {
       console.log(`Rate limited! Retrying after ${retryAfter} milliseconds.`);
       await delay(retryAfter); // Wait for the time specified in the `Retry-After` header
     }
+
+
+
     
   } catch (error) {
     // If the error is a 429 (rate limit exceeded) error
